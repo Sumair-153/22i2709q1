@@ -4,19 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
-// Hardcoded stock data
+// Hardcoded stock data with added color property
 const initialStock = [
-  { id: 1, name: "Laptop Pro", sku: "LAP001", quantity: 50, minStock: 10 },
-  { id: 2, name: "Wireless Mouse", sku: "MOU001", quantity: 150, minStock: 30 },
-  { id: 3, name: "Gaming Keyboard", sku: "KEY001", quantity: 75, minStock: 20 },
-  { id: 4, name: "4K Monitor", sku: "MON001", quantity: 25, minStock: 5 },
-  { id: 5, name: "USB-C Hub", sku: "USB001", quantity: 100, minStock: 15 },
+  { id: 1, name: "Laptop Pro", sku: "LAP001", quantity: 50, minStock: 10, color: "#9b87f5" },
+  { id: 2, name: "Wireless Mouse", sku: "MOU001", quantity: 150, minStock: 30, color: "#7E69AB" },
+  { id: 3, name: "Gaming Keyboard", sku: "KEY001", quantity: 75, minStock: 20, color: "#D6BCFA" },
+  { id: 4, name: "4K Monitor", sku: "MON001", quantity: 25, minStock: 5, color: "#E5DEFF" },
+  { id: 5, name: "USB-C Hub", sku: "USB001", quantity: 100, minStock: 15, color: "#8B5CF6" },
 ];
 
 export default function Stock() {
   const [stock, setStock] = useState(initialStock);
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
 
   const filteredStock = stock.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,12 +27,27 @@ export default function Stock() {
 
   const handleDelete = (id: number) => {
     setStock(stock.filter(item => item.id !== id));
+    toast({
+      title: "Item Deleted",
+      description: "The stock item has been removed successfully.",
+    });
   };
 
   const adjustQuantity = (id: number, amount: number) => {
-    setStock(stock.map(item =>
-      item.id === id ? { ...item, quantity: Math.max(0, item.quantity + amount) } : item
-    ));
+    setStock(stock.map(item => {
+      if (item.id === id) {
+        const newQuantity = Math.max(0, item.quantity + amount);
+        if (newQuantity <= item.minStock) {
+          toast({
+            title: "Low Stock Alert",
+            description: `${item.name} is running low on stock!`,
+            variant: "destructive",
+          });
+        }
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }));
   };
 
   return (
@@ -52,6 +69,7 @@ export default function Stock() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Color</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Quantity</TableHead>
@@ -62,6 +80,12 @@ export default function Stock() {
           <TableBody>
             {filteredStock.map((item) => (
               <TableRow key={item.id}>
+                <TableCell>
+                  <div 
+                    className="w-6 h-6 rounded-full" 
+                    style={{ backgroundColor: item.color }}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell>{item.sku}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
@@ -78,13 +102,25 @@ export default function Stock() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => adjustQuantity(item.id, -1)}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => adjustQuantity(item.id, -1)}
+                    >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => adjustQuantity(item.id, 1)}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => adjustQuantity(item.id, 1)}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDelete(item.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
